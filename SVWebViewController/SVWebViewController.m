@@ -79,10 +79,13 @@
 
 - (void)viewWillAppear:(BOOL)animated {
     NSAssert(self.navigationController, @"SVWebViewController needs to be contained in a UINavigationController. If you are presenting SVWebViewController modally, use SVModalWebViewController instead.");
-    
+
     [super viewWillAppear:animated];
-    
-    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
+
+    if (self.toolbarHidden != !self.toolbarHidden) {
+       [self.navigationController setToolbarHidden:self.toolbarHidden animated:animated];
+    }
+    else if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
         [self.navigationController setToolbarHidden:NO animated:animated];
     }
     else if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
@@ -92,7 +95,7 @@
 
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
-    
+
     if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
         [self.navigationController setToolbarHidden:YES animated:animated];
     }
@@ -106,7 +109,7 @@
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation {
     if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
         return YES;
-    
+
     return toInterfaceOrientation != UIInterfaceOrientationPortraitUpsideDown;
 }
 
@@ -169,16 +172,16 @@
 - (void)updateToolbarItems {
     self.backBarButtonItem.enabled = self.self.webView.canGoBack;
     self.forwardBarButtonItem.enabled = self.self.webView.canGoForward;
-    
+
     UIBarButtonItem *refreshStopBarButtonItem = self.self.webView.isLoading ? self.stopBarButtonItem : self.refreshBarButtonItem;
-    
+
     UIBarButtonItem *fixedSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFixedSpace target:nil action:nil];
     UIBarButtonItem *flexibleSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
-    
+
     if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
         CGFloat toolbarWidth = 250.0f;
         fixedSpace.width = 35.0f;
-        
+
         NSArray *items = [NSArray arrayWithObjects:
                           fixedSpace,
                           refreshStopBarButtonItem,
@@ -189,14 +192,14 @@
                           fixedSpace,
                           self.actionBarButtonItem,
                           nil];
-        
+
         UIToolbar *toolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0.0f, 0.0f, toolbarWidth, 44.0f)];
         toolbar.items = items;
         toolbar.barStyle = self.navigationController.navigationBar.barStyle;
         toolbar.tintColor = self.navigationController.navigationBar.tintColor;
         self.navigationItem.rightBarButtonItems = items.reverseObjectEnumerator.allObjects;
     }
-    
+
     else {
         NSArray *items = [NSArray arrayWithObjects:
                           fixedSpace,
@@ -209,7 +212,7 @@
                           self.actionBarButtonItem,
                           fixedSpace,
                           nil];
-        
+
         self.navigationController.toolbar.barStyle = self.navigationController.navigationBar.barStyle;
         self.navigationController.toolbar.tintColor = self.navigationController.navigationBar.tintColor;
         self.toolbarItems = items;
@@ -221,7 +224,7 @@
 - (void)webViewDidStartLoad:(UIWebView *)webView {
     [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:YES];
     [self updateToolbarItems];
-    
+
     if ([self.delegate respondsToSelector:@selector(webViewDidStartLoad:)]) {
         [self.delegate webViewDidStartLoad:webView];
     }
@@ -230,13 +233,13 @@
 
 - (void)webViewDidFinishLoad:(UIWebView *)webView {
     [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
-    
+
     if (self.navigationItem.title == nil) {
         self.navigationItem.title = [webView stringByEvaluatingJavaScriptFromString:@"document.title"];
     }
-    
+
     [self updateToolbarItems];
-    
+
     if ([self.delegate respondsToSelector:@selector(webViewDidFinishLoad:)]) {
         [self.delegate webViewDidFinishLoad:webView];
     }
@@ -245,7 +248,7 @@
 - (void)webView:(UIWebView *)webView didFailLoadWithError:(NSError *)error {
     [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
     [self updateToolbarItems];
-    
+
     if ([self.delegate respondsToSelector:@selector(webView:didFailLoadWithError:)]) {
         [self.delegate webView:webView didFailLoadWithError:error];
     }
@@ -255,7 +258,7 @@
     if ([self.delegate respondsToSelector:@selector(webView:shouldStartLoadWithRequest:navigationType:)]) {
         return [self.delegate webView:webView shouldStartLoadWithRequest:request navigationType:navigationType];
     }
-    
+
     return YES;
 }
 
@@ -282,13 +285,13 @@
     NSURL *url = self.webView.request.URL ? self.webView.request.URL : self.request.URL;
     if (url != nil) {
         NSArray *activities = @[[SVWebViewControllerActivitySafari new], [SVWebViewControllerActivityChrome new]];
-        
+
         if ([[url absoluteString] hasPrefix:@"file:///"]) {
             UIDocumentInteractionController *dc = [UIDocumentInteractionController interactionControllerWithURL:url];
             [dc presentOptionsMenuFromRect:self.view.bounds inView:self.view animated:YES];
         } else {
             UIActivityViewController *activityController = [[UIActivityViewController alloc] initWithActivityItems:@[url] applicationActivities:activities];
-            
+
 #ifdef __IPHONE_8_0
             if (floor(NSFoundationVersionNumber) > NSFoundationVersionNumber_iOS_7_1 &&
                 UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
@@ -298,7 +301,7 @@
                 ctrl.barButtonItem = sender;
             }
 #endif
-            
+
             [self presentViewController:activityController animated:YES completion:nil];
         }
     }

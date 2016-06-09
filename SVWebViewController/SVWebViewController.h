@@ -14,4 +14,7 @@
 
 @property (nonatomic, weak) id<UIWebViewDelegate> delegate;
 
+/// Set to YES, if the bottom toolbar should be hidden. Default: NO
+@property (nonatomic, assign) BOOL toolbarHidden;
+
 @end
